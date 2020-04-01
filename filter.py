@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import xlrd
+import openpyxl
 import re
 import os
 import matplotlib.pyplot as plt
 import tkinter as tk
 from tkinter import ttk
-from tkinter.messagebox import showerror
-from tkinter.simpledialog import askinteger
+from tkinter.messagebox import showerror, showinfo
 
 
 def get_data_path():
@@ -16,6 +16,8 @@ def get_data_path():
     for path in os.listdir():
         if re_data_path.match(path):
             data_path.append(path)
+    if len(data_path) == 0:
+        showerror(title='error', message='could not find data file')
     return data_path
 
 
@@ -45,13 +47,16 @@ def search(key, none_value):
                     sale_count.append(a)
                     sale_money.append(b)
                     people.append(c)
+    if len(time) == 0:
+        showinfo(title='info', message='does not have any data')
+        return
     draw(time, [
         {'name': 'sale_count', 'value': sale_count},
         {'name': 'sale_money', 'value': sale_money},
         {'name': 'people', 'value': people}])
 
 
-def calculate(none_value):
+def calculate(none_value, save_data):
     data_path = get_data_path()
     time = []
     month_total_sale_count = []
@@ -69,14 +74,20 @@ def calculate(none_value):
     month_avg_sale_count = list(map(lambda x:x/l, month_total_sale_count))
     month_avg_sale_money = list(map(lambda x:x/l, month_total_sale_money))
     month_avg_people = list(map(lambda x:x/l, month_total_people))
-    draw(time, [
+    if len(time) == 0:
+        showinfo(title='info', message='does not have any data')
+        return
+    data = [
         {'name': 'month_total_sale_count', 'value': month_total_sale_count},
         {'name': 'month_total_sale_money', 'value': month_total_sale_money},
         {'name': 'month_total_people', 'value': month_total_people},
         {'name': 'month_avg_sale_count', 'value': month_avg_sale_count},
         {'name': 'month_avg_sale_money', 'value': month_avg_sale_money},
-        {'name': 'month_avg_people', 'value': month_avg_people},        
-    ])
+        {'name': 'month_avg_people', 'value': month_avg_people},
+    ]
+    if save_data == 1:
+        save(time, data)
+    draw(time, data)
 
 
 def draw(time, draw_list):
@@ -92,6 +103,22 @@ def draw(time, draw_list):
                      va='bottom', fontsize=10)
         plt.gcf().autofmt_xdate()  # 自动旋转日期标记
     plt.show()
+
+
+def save(time, data):
+    book = openpyxl.Workbook()  # 新建工作簿
+    book.create_sheet('total')  # 添加页
+    # table = data.get_sheet_by_name('Sheet1') # 获得指定名称页
+    table = book.active  # 获得当前活跃的工作页，默认为第一个工作页
+    items = []
+    for j in range(len(data)):
+        table.cell(j+2, 1, data[j]['name'])
+        items.append(data[j]['value'])
+    for i in range(len(time)):
+        table.cell(1, i+2, time[i])  # 行，列，值 这里是从1开始计数的
+        for k, item in enumerate(items):
+            table.cell(k+2, i+2, item[i])
+    book.save('calculate_result.xlsx')  # 一定要保存
 
 
 def gui():
@@ -114,10 +141,9 @@ def gui():
     ttk.Label(window, text='category').grid(row=3, column=1)
 
     key_values = tk.StringVar()  # 窗体自带的文本，新建一个值
-    key = ttk.Combobox(window, textvariable=key_values)# 初始化
+    key = ttk.Combobox(window, textvariable=key_values)  # 初始化
     key["values"] = category
     key.grid(row=3, column=2)
-
 
     ttk.Label(window, text='total calculate').grid(row=4, column=1)
     c = tk.IntVar()
@@ -139,8 +165,7 @@ def gui():
         if not none_value.get():
             showerror(title='error', message='you should input none_value')
             return
-        #if c.get() == 1 and none_value.get():
-        calculate(int(float(none_value.get())))
+        calculate(int(float(none_value.get())), c.get())
 
     tk.Button(window, text='search', width=10, height=2,
               command=trigger_search).grid(row=3, column=4)
