@@ -1,2 +1,9 @@
 *.xlsx
 .idea/
+filter.exe
+filter.spec
+build/
+dist/
+*.xls
+venv/
+__pycache__/

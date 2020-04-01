@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import xlrd
-import openpyxl
+import xlwt
 import re
 import os
 import matplotlib.pyplot as plt
@@ -106,19 +106,17 @@ def draw(time, draw_list):
 
 
 def save(time, data):
-    book = openpyxl.Workbook()  # 新建工作簿
-    book.create_sheet('total')  # 添加页
-    # table = data.get_sheet_by_name('Sheet1') # 获得指定名称页
-    table = book.active  # 获得当前活跃的工作页，默认为第一个工作页
+    book = xlwt.Workbook(encoding='utf-8')  # 新建工作簿
+    table = book.add_sheet('total')  # 添加页
     items = []
     for j in range(len(data)):
-        table.cell(j+2, 1, data[j]['name'])
+        table.write(j+1, 0, data[j]['name'])
         items.append(data[j]['value'])
     for i in range(len(time)):
-        table.cell(1, i+2, time[i])  # 行，列，值 这里是从1开始计数的
+        table.write(0, i+1, time[i])  # 行，列，值 这里是从1开始计数的
         for k, item in enumerate(items):
-            table.cell(k+2, i+2, item[i])
-    book.save('calculate_result.xlsx')  # 一定要保存
+            table.write(k+1, i+1, item[i])
+    book.save('calculate_result.xls')  # 一定要保存
 
 
 def gui():
